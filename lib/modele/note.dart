@@ -30,10 +30,10 @@ class Note {
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      if (id != null) 'id': id,
+      if (id != null) 'id_notes': id,
       'text': text,
       'date': date.toIso8601String(),
-      if (typeId != null) 'type_id': typeId,
+      if (typeId != null) 'id_types': typeId,
     };
   }
 
@@ -50,10 +50,10 @@ class Note {
     }
     
     return Note(
-      id: map['id'] as int?,
+      id: map['id_notes'] as int?,
       text: map['text'] as String,
       date: parsedDate,
-      typeId: map['type_id'] as int?,
+      typeId: map['id_types'] as int?,
     );
   }
 

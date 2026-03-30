@@ -39,7 +39,7 @@ class NoteService {
           .from(_tableName)
           .insert({
             'text': text,
-            'type_id': typeId,
+            'id_types': typeId,
             'date': DateTime.now().toIso8601String(),
           })
           .select()
@@ -58,10 +58,10 @@ class NoteService {
           .from(_tableName)
           .update({
             'text': text,
-            'type_id': typeId,
+            'id_types': typeId,
             'date': DateTime.now().toIso8601String(),
           })
-          .eq('id', id);
+          .eq('id_notes', id);
       
       return true;
     } catch (e) {
@@ -75,8 +75,8 @@ class NoteService {
       await _supabase
           .from(_tableName)
           .delete()
-          .eq('id', id);
-      
+          .eq('id_notes', id);
+          
       return true;
     } catch (e) {
       print('Erreur deleteNote: $e');

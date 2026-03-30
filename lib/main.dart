@@ -5,12 +5,23 @@ import 'package:supanote/login_screen.dart';
 
 
 Future<void> main() async {
-  await Supabase.initialize(
-    url: 'https://tlhlzovftqgapavtrfgr.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsaGx6b3ZmdHFnYXBhdnRyZmdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjM3MjUsImV4cCI6MjA3ODkzOTcyNX0.cw-B_QLrJCnzfxZB7bh5AYE3bzLrR4FhJp39AQSuK14',
-  );
-
-  runApp(MyApp());
+  try {
+    await Supabase.initialize(
+      url: 'https://tlhlzovftqgapavtrfgr.supabase.co',
+      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsaGx6b3ZmdHFnYXBhdnRyZmdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMzNjM3MjUsImV4cCI6MjA3ODkzOTcyNX0.cw-B_QLrJCnzfxZB7bh5AYE3bzLrR4FhJp39AQSuK14',
+    );
+    runApp(const MyApp());
+  } catch (e) {
+    runApp(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Text('Erreur de connexion. Veuillez redémarrer l\'application.'),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 final supabase = Supabase.instance.client;
@@ -41,12 +52,12 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Supanotes',
       theme: ThemeData(
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.yellow,
+        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.yellow),
-        useMaterial3: false,
+        useMaterial3: true,
       ),
       routes: {
         '/': (context) => _user != null ? const MyHomePage(title: 'SupaNotes') : const LoginScreen(),

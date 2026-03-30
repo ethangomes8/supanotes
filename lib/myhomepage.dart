@@ -20,17 +20,33 @@ class _MyHomePageState extends State<MyHomePage> {
   final NoteService _noteService = NoteService();
   final TypeService _typeService = TypeService();
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    loadTypes();
-    loadNotes();
+    _loadInitialData();
   }
 
-  Future<void> loadTypes() async {
-    _types = await _typeService.getAllTypes();
+  Future<void> _loadInitialData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      _types = await _typeService.getAllTypes();
+      _notes = await _noteService.getAllNotes();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Erreur de connexion. Impossible de charger les données.';
+      });
+    }
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
+
 
   Future<void> loadNotes() async {
     setState(() => _isLoading = true);
@@ -132,7 +148,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> showNoteDialog({String initialText = '', int? editId, int? initialTypeId}) async {
     final controller = TextEditingController(text: initialText);
-    int selectedTypeId = initialTypeId ?? (_types.isNotEmpty ? _types[0].id! : 1);
+    int selectedTypeId = initialTypeId ?? (_types.isNotEmpty ? _types.first.id ?? 1 : 1);
 
     await showDialog(
       context: context,
@@ -152,19 +168,21 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                initialValue: selectedTypeId,
+                value: selectedTypeId,
                 decoration: const InputDecoration(
                   labelText: 'Type',
                   border: OutlineInputBorder(),
                 ),
-                items: _types.map((type) {
+                items: _types.where((type) => type.id != null).map((type) {
                   return DropdownMenuItem<int>(
                     value: type.id!,
                     child: Text(type.name),
                   );
                 }).toList(),
                 onChanged: (value) {
-                  selectedTypeId = value!;
+                  if (value != null) {
+                    selectedTypeId = value;
+                  }
                 },
               ),
             ],
@@ -210,6 +228,84 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Widget body;
+    if (_isLoading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (_errorMessage != null) {
+      body = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 80,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadInitialData,
+              child: const Text('Réessayer'),
+            )
+          ],
+        ),
+      );
+    } else if (_notes.isEmpty) {
+      body = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.note_alt_outlined,
+              size: 80,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune note',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Cliquez sur le bouton + pour en créer une.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      );
+    } else {
+      body = ListView.builder(
+        padding: const EdgeInsets.all(8.0),
+        itemCount: _notes.length,
+        itemBuilder: (context, index) {
+          final note = _notes[index];
+          final noteType = _types.firstWhere(
+            (type) => type.id == note.typeId,
+            orElse: () => _types.isNotEmpty ? _types[0] : NoteType(id: 1, name: 'basic', color: '#FFFFFF'),
+          );
+          return NoteCard(
+            note: note,
+            type: noteType,
+            onEdit: () => showNoteDialog(
+              initialText: note.text,
+              editId: note.id,
+              initialTypeId: note.typeId,
+            ),
+            onDelete: () {
+              if (note.id != null) {
+                confirmDeleteNote(note.id!);
+              }
+            },
+          );
+        },
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -225,7 +321,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.note_add),
+            icon: const Icon(Icons.note_add_outlined),
             tooltip: 'Ajouter une note',
             onPressed: () => showNoteDialog(),
           ),
@@ -236,30 +332,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _notes.isEmpty
-              ? const Center(child: Text('Aucune note enregistrée'))
-              : ListView.builder(
-                  itemCount: _notes.length,
-                  itemBuilder: (context, index) {
-                    final note = _notes[index];
-                    final noteType = _types.firstWhere(
-                      (type) => type.id == note.typeId,
-                      orElse: () => _types.isNotEmpty ? _types[0] : NoteType(id: 1, name: 'basic', color: '#FFFFFF'),
-                    );
-                    return NoteCard(
-                      note: note,
-                      type: noteType,
-                      onEdit: () => showNoteDialog(
-                        initialText: note.text,
-                        editId: note.id,
-                        initialTypeId: note.typeId,
-                      ),
-                      onDelete: () => confirmDeleteNote(note.id!),
-                    );
-                  },
-                ),
+      body: body,
     );
   }
 }

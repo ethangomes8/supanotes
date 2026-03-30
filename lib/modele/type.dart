@@ -11,7 +11,7 @@ class NoteType {
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      if (id != null) 'id': id,
+      if (id != null) 'id_types': id,
       'name': name,
       'color': color,
     };
@@ -19,7 +19,7 @@ class NoteType {
 
   factory NoteType.fromMap(Map<String, dynamic> map) {
     return NoteType(
-      id: map['id'] as int?,
+      id: map['id_types'] as int?,
       name: map['name'] as String,
       color: map['color'] as String,
     );
